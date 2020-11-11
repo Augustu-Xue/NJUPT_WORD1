@@ -1,0 +1,174 @@
+#include <Windows.h>
+#include <mysql.h>
+#include <string>
+#include <iostream>
+#include <vector>
+#include<algorithm>
+#include "Card.hpp"
+using namespace std;
+char query[150]; //查询语句
+class dataBase {
+    MYSQL m_sqlCon;
+    const char host[20] = "localhost";
+    const char user[20] = "root";
+    const char pass[7]= "123456";
+    const char databaseName[7] = "augu";
+    const int port = 3306;
+public:
+    bool initConnection();
+    void user_query();
+    bool InsertData();
+    bool ModifyData();
+    bool DeleteData();
+    //void user_insert(Card& body);
+};
+class Card {
+    int basic;//序号
+    string english;//英文
+    string property;//词性
+    string chinese;//中文
+public:
+    Card(int b, string en, string pr, string ch) {
+        basic = b;
+        english = en;
+        property = pr;
+        chinese = ch;
+    }
+    auto get_chinese() {
+        return chinese;
+    }
+    auto get_basic() {
+        return basic;
+    }
+    auto get_property() {
+        return property;
+    }
+    auto get_english() {
+        return english;
+    }
+    Card() {
+   
+        basic = 0;
+        english ="null" ;
+        property = "null";
+        chinese = "无";
+    }
+};
+
+bool dataBase::initConnection() {
+    try {
+        if (mysql_init(&m_sqlCon) == NULL) {
+            std::cout << "初始化数据库失败" << std::endl;
+            return false;
+        }
+        // localhost:服务器 root为账号密码 test为数据库名 3306为端口
+        if (!mysql_real_connect(&m_sqlCon, host, user, pass, databaseName, port, NULL, 0))
+        {
+            std::cout << "数据库连接失败" << std::endl;
+            return false;
+        }
+        std::cout << "数据库连接成功" << std::endl;
+        mysql_query(&m_sqlCon, "SET NAMES GBK"); //设置编码格式
+        return true;
+    }
+    catch (...)
+    {
+        std::cout << "出错啦" << std::endl;
+        return false;
+    }
+}
+void dataBase::user_query() {
+    if (mysql_query(&m_sqlCon, "select * from dictionary")) {
+        std::cout << "查询失败" << std::endl;
+        return;
+    }
+    std::cout << "查询成功" << std::endl;
+    MYSQL_RES* result;
+    result = mysql_store_result(&m_sqlCon);
+    if (result) {
+        int row_num, col_num;
+        row_num = mysql_num_rows(result);
+        col_num = mysql_num_fields(result);
+        std::cout << "共有" << row_num << "条数据，以下为其详细内容：" << std::endl;
+        MYSQL_FIELD* fd;
+        while (fd = mysql_fetch_field(result)) {
+            std::cout << fd->name << "\t";
+        }
+        std::cout << std::endl;
+        MYSQL_ROW sql_row;
+        while (sql_row = mysql_fetch_row(result)) {
+            for (int i = 0; i < col_num; i++) {
+                if (sql_row[i] == NULL) std::cout << "NULL\t";
+                else std::cout << sql_row[i] << "\t";
+            }
+            std::cout << std::endl;
+        }
+    }
+    if (result != NULL)
+        mysql_free_result(result);
+
+}
+bool dataBase::InsertData()
+{
+    sprintf_s(query, "insert into dictionary values (05, 'chinese', 'n','中国人');");  //可以想办法实现手动在控制台手动输入指令
+    if (mysql_query(&m_sqlCon, query))        //执行SQL语句
+    {
+        printf("Query failed (%s)\n", mysql_error(&m_sqlCon));
+        return false;
+    }
+    else
+    {
+        printf("Insert success\n");
+        return true;
+    }
+}
+bool dataBase::ModifyData()
+{
+    sprintf_s(query, "update dictionary set english='china' where chinese='中国人'");
+    if (mysql_query(&m_sqlCon, query))        //执行SQL语句
+    {
+        printf("Query failed (%s)\n", mysql_error(&m_sqlCon));
+        return false;
+    }
+    else
+    {
+        printf("Insert success\n");
+        return true;
+    }
+}
+bool dataBase::DeleteData()
+{
+    
+       sprintf_s(query, "delete from dictionary where chinese='中国人'");
+       /* char query[100];
+        printf("please input the sql:\n");
+        gets_s(query);  //这里手动输入sql语句*/
+        if (mysql_query(&m_sqlCon, query))        //执行SQL语句
+        {
+            printf("Query failed (%s)\n", mysql_error(&m_sqlCon));
+            return false;
+        }
+        else
+        {
+            printf("Insert success\n");
+            return true;
+        }
+    
+}
+
+
+int main() {
+    dataBase au;
+    int basic =3;//序号
+    char english;//英文
+    char property;//词性
+    char chinese;//中文
+    au.initConnection();
+    au.user_query();
+   
+    au.DeleteData();
+    au.user_query();
+    
+    return 0;
+}
+
